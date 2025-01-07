@@ -1,0 +1,22 @@
+{
+  "produtos": [
+    {
+      "nome": "Produtoa novo",
+      "descricao": "Descrição do produto 1",
+      "preco": 100,
+      "estoque": 10
+    },
+    {
+      "nome": "Produto top",
+      "descricao": "Descrição do produto 2",
+      "preco": 200,
+      "estoque": 20
+    },
+    {
+      "nome": "Produto maximo",
+      "descricao": "Descrição do produto 3",
+      "preco": 300,
+      "estoque": 30
+    }
+  ]
+}
