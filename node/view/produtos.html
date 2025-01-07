@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos</title>
+</head>
+
+<body>
+    <div>
+        Nome: <input type="text" id="txtNome">
+    </div>
+    <div>
+        Descrição: <input type="text" id="txtDesc">
+    </div>
+    <div>
+        Preço: <input type="number" id="txtPreco">
+    </div>
+    <div>
+        Estoque: <input type="number" id="txtEstoque">
+    </div>
+    <div>
+        Filtro: <input type="text" id="txtFiltro">
+    </div>
+    <div>
+        <button id="btnCadastro">Cadastrar produto</button>
+    </div>
+
+    <div id="dados"></div>
+
+    <script>
+        var PRODUTOS = {};
+        const nome = document.getElementById('txtNome');
+        const desc = document.getElementById('txtDesc');
+        const preco = document.getElementById('txtPreco');
+        const estoque = document.getElementById('txtEstoque');
+        const btnCadastro = document.getElementById('btnCadastro');
+        const filtro = document.getElementById('txtFiltro');
+        const token = localStorage.getItem('token');
+        pegarProdutos()
+
+        txtFiltro.onkeyup = () => {
+            construirTabela(PRODUTOS, txtFiltro.value);
+        }
+
+        btnCadastro.onclick = () => {
+            cadastrarProduto();
+        }
+
+        function construirTabela(data, filtro) {
+            const table = document.createElement('table');
+            table.style.border = '1px solid black';
+            const titulo = document.createElement('tr');
+            const nomeTitulo = document.createElement('th');
+            nomeTitulo.textContent = 'Nome';
+            const descTitulo = document.createElement('th');
+            descTitulo.textContent = 'Descrição';
+            const precoTitulo = document.createElement('th');
+            precoTitulo.textContent = 'Preço';
+            const estoqueTitulo = document.createElement('th');
+            estoqueTitulo.textContent = 'Estoque';
+            const deletarTitulo = document.createElement('th');
+            deletarTitulo.textContent = 'Deletar';
+            const selecionarTitulo = document.createElement('th');
+            selecionarTitulo.textContent = 'Atualizar';
+            const atualizarTitulo = document.createElement('th');
+            atualizarTitulo.textContent = 'Deletar';
+
+            titulo.appendChild(nomeTitulo);
+            titulo.appendChild(descTitulo);
+            titulo.appendChild(precoTitulo);
+            titulo.appendChild(estoqueTitulo);
+            titulo.appendChild(deletarTitulo);
+            titulo.appendChild(selecionarTitulo);
+            titulo.appendChild(atualizarTitulo);
+            table.appendChild(titulo);
+
+            for (let product of data) {
+                if (!product.nome.toLowerCase().includes(filtro.toLowerCase())) {
+                    continue;
+                }
+                const row = document.createElement('tr');
+
+                const nomeLinha = document.createElement('td');
+                const nomeInput = document.createElement('input');
+                nomeInput.value = product.nome;
+                nomeInput.disabled = true;
+                nomeLinha.appendChild(nomeInput);
+
+                const descLinha = document.createElement('td');
+                const descInput = document.createElement('input');
+                descInput.value = product.descricao;
+                descInput.disabled = true;
+                descLinha.appendChild(descInput);
+
+                const precoLinha = document.createElement('td');
+                const precoInput = document.createElement('input');
+                precoInput.value = product.preco;
+                precoInput.type = 'number';
+                precoInput.disabled = true;
+                precoLinha.appendChild(precoInput);
+
+                const estoqueLinha = document.createElement('td');
+                const estoqueInput = document.createElement('input');
+                estoqueInput.value = product.estoque;
+                estoqueInput.type = 'number';
+                estoqueInput.disabled = true;
+                estoqueLinha.appendChild(estoqueInput);
+
+                const deletarLinha = document.createElement('td');
+                const deletarBtn = document.createElement('button');
+                deletarBtn.textContent = 'Deletar';
+                deletarBtn.onclick = () => {
+                    deletarProduto(product.id);
+                }
+                deletarLinha.appendChild(deletarBtn);
+
+                const selecionarLinha = document.createElement('td');
+                const selecionarBtn = document.createElement('button');
+                selecionarBtn.textContent = 'Selecionar';
+                selecionarBtn.onclick = () => {
+                    nomeInput.disabled = false;
+                    descInput.disabled = false;
+                    precoInput.disabled = false;
+                    estoqueInput.disabled = false;
+                }
+                selecionarLinha.appendChild(selecionarBtn);
+
+                const atualizarLinha = document.createElement('td');
+                const atualizarBtn = document.createElement('button');
+                atualizarBtn.textContent = 'Atualizar';
+                atualizarBtn.onclick = () => {
+                    nomeInput.disabled = true;
+                    descInput.disabled = true;
+                    precoInput.disabled = true;
+                    estoqueInput.disabled = true;
+                    if (!nomeInput.value || !descInput.value || !precoInput.value || !estoqueInput.value) {
+                        alert('Preencha todos os campos');
+                        return;
+                    }
+                    atualizarProduto(product.id, nomeInput.value, descInput.value, precoInput.value, estoqueInput.value);
+                }
+                atualizarLinha.appendChild(atualizarBtn);
+
+                row.appendChild(nomeLinha);
+                row.appendChild(descLinha);
+                row.appendChild(precoLinha);
+                row.appendChild(estoqueLinha);
+                row.appendChild(deletarLinha);
+                row.appendChild(selecionarLinha);
+                row.appendChild(atualizarLinha);
+                table.appendChild(row);
+            }
+
+            const dadosDiv = document.getElementById('dados');
+            dadosDiv.innerHTML = '';
+            dadosDiv.appendChild(table);
+        }
+
+        function atualizarProduto(id, nome, desc, preco, estoque) {
+            fetch(`http://localhost:8080/produtos/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    nome: nome,
+                    descricao: desc,
+                    preco: preco,
+                    estoque: estoque
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.status) {
+                        alert('Erro ao atualizar produto');
+                    } else {
+                        alert('Produto atualizado com sucesso');
+                        nome.value = '';
+                        desc.value = '';
+                        preco.value = '';
+                        estoque.value = '';
+                        pegarProdutos();
+                    }
+                }).catch(err => {
+                    console.error(err);
+                });
+        }
+
+
+        function deletarProduto(id) {
+            fetch(`http://localhost:8080/produtos/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            }).then(response => {
+                if (response.status === 204) {
+                    alert('Produto deletado com sucesso');
+                    pegarProdutos();
+                } else {
+                    alert('Erro ao deletar produto pois ele está em um pedido');
+                }
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+
+        function pegarProdutos() {
+            fetch('http://localhost:8080/produtos', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+            }).then(response => response.json()).then(data => {
+                PRODUTOS = data.products;
+                construirTabela(PRODUTOS, '')
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+
+        function cadastrarProduto() {
+            if (nome.value === '' || desc.value === '' || preco.value === '' || estoque.value === '') {
+                alert('Preencha todos os campos');
+                return;
+            } else if (preco.value < 0 || estoque.value < 0) {
+                alert('Preço e estoque devem ser maiores que 0');
+                return;
+            }
+            fetch('http://localhost:8080/produtos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    nome: nome.value,
+                    descricao: desc.value,
+                    preco: preco.value,
+                    estoque: estoque.value
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.status) {
+                        alert('Erro ao cadastrar produto');
+                    } else {
+                        alert('Produto cadastrado com sucesso');
+                        nome.value = '';
+                        desc.value = '';
+                        preco.value = '';
+                        estoque.value = '';
+                        pegarProdutos();
+                    }
+                }).catch(err => {
+                    console.error(err);
+                });
+        }
+    </script>
+</body>
+
+</html>

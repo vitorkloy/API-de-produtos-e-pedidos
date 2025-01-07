@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos</title>
+</head>
+
+<body>
+    <div>
+        Usuário: <span id="lblUsuario"></span>
+    </div>
+    <div>
+        <select id="cboProductos">
+            <option value="0" disabled selected>Selecione um produto</option>
+        </select>
+    </div>
+    <div>
+        Total: <span id="lblTotal"></span>
+    </div>
+
+    <div>
+        <button id="btnComprar">Comprar</button>
+    </div>
+
+    <div>
+        <input type="text" id="txtFiltro" placeholder="Filtrar por nome do produto">
+    </div>
+
+    <div id="dados">
+
+    </div>
+
+    <script>
+        var produtos = [];
+        var PEDIDOS = {};
+        const cboProductos = document.getElementById('cboProductos');
+        const lblTotal = document.getElementById('lblTotal');
+        const lblUsuario = document.getElementById('lblUsuario');
+        const btnComprar = document.getElementById('btnComprar');
+        const token = localStorage.getItem('token');
+        const filtro = document.getElementById('txtFiltro');
+
+        filtro.onkeyup = () => {
+            construirTabela(PEDIDOS, filtro.value);
+        }
+
+        pegarProdutos();
+        pegarPedidos();
+
+        btnComprar.onclick = () => {
+            const produto = produtos.find(p => p.id == cboProductos.value);
+            fetch('http://localhost:8080/pedidos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    total: produto.preco,
+                    userId: parseJwt(token).id,
+                    productId: produto.id,
+                    status: "pendente"
+                })
+            }).then(response => response.json()).then(data => {
+                if (!data.status) {
+                    alert('Erro ao criar pedido');
+                } else {
+                    alert('Pedido criado com sucesso');
+                    pegarPedidos()
+                }
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+
+        cboProductos.onchange = () => {
+            const produto = produtos.find(p => p.id == cboProductos.value);
+            lblTotal.innerHTML = produto.preco;
+        }
+
+        function pegarPedidos() {
+            fetch('http://localhost:8080/pedidos', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            }).then(response => response.json()).then(data => {
+                PEDIDOS = data.orders;
+                construirTabela(PEDIDOS, '')
+            }).catch(err => {
+
+                console.error(err);
+            })
+        }
+        function parseJwt(token) {
+            var base64Url = token.split('.')[1];
+            var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            var jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function (c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+
+            return JSON.parse(jsonPayload);
+        }
+        lblUsuario.innerHTML = parseJwt(token).name;
+
+        function construirTabela(pedidos, filtro) {
+
+            const dados = document.getElementById('dados');
+            dados.innerHTML = '';
+            const table = document.createElement('table');
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+            const tr = document.createElement('tr');
+            const th1 = document.createElement('th');
+            const th2 = document.createElement('th');
+            const th3 = document.createElement('th');
+            const th4 = document.createElement('th');
+            const th5 = document.createElement('th');
+            const th6 = document.createElement('th');
+            const th7 = document.createElement('th');
+            const th8 = document.createElement('th');
+            th1.innerHTML = 'Produto';
+            th2.innerHTML = 'Usuário';
+            th3.innerHTML = 'Status';
+            th4.innerHTML = 'Total';
+            th5.innerHTML = 'Data';
+            th6.innerHTML = 'Deletar';
+            th7.innerHTML = 'Selecionar';
+            th8.innerHTML = 'Atualizar';
+            tr.appendChild(th1);
+            tr.appendChild(th2);
+            tr.appendChild(th3);
+            tr.appendChild(th4);
+            tr.appendChild(th5);
+            tr.appendChild(th6);
+            tr.appendChild(th7);
+            tr.appendChild(th8);
+            thead.appendChild(tr);
+            table.appendChild(thead);
+            pedidos.forEach(pedido => {
+                if (filtro == '' || pedido.nome_produto.includes(filtro)) {
+                    const tr = document.createElement('tr');
+                    const td1 = document.createElement('td');
+                    const td2 = document.createElement('td');
+                    const td3 = document.createElement('td');
+                    const td4 = document.createElement('td');
+                    const td5 = document.createElement('td');
+                    const td6 = document.createElement('td');
+                    const td7 = document.createElement('td');
+                    const td8 = document.createElement('td');
+
+                    td1.innerHTML = pedido.nome_produto;
+                    td2.innerHTML = pedido.nome_usuario;
+
+                    const statusInput = document.createElement('input');
+                    statusInput.type = "text"
+                    statusInput.value = pedido.status;
+                    statusInput.disabled = true;
+                    td3.appendChild(statusInput);
+
+                    td4.innerHTML = pedido.valor_total;
+                    td5.innerHTML = pedido.data_pedido;
+
+                    const btnDeletar = document.createElement('button');
+                    btnDeletar.innerHTML = 'Deletar';
+                    btnDeletar.onclick = () => {
+                        fetch(`http://localhost:8080/pedidos/${pedido.id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                        }).then(response => {
+                            if (response.status == 204) {
+                                alert('Pedido deletado com sucesso');
+                                pegarPedidos()
+                            } else {
+                                alert('Erro ao deletar pedido');
+                            }
+                        })
+                            .catch(err => {
+                                console.error(err);
+                            });
+                    }
+                    td6.appendChild(btnDeletar)
+
+                    const btnSelecionar = document.createElement('button');
+                    btnSelecionar.innerHTML = 'Selecionar';
+                    btnSelecionar.onclick = () => {
+                        statusInput.disabled = false;
+                    }
+                    td7.appendChild(btnSelecionar);
+
+                    const btnAtualizar = document.createElement('button');
+                    btnAtualizar.innerHTML = 'Atualizar';
+                    btnAtualizar.onclick = async () => {
+                        fetch(`http://localhost:8080/pedidos/${pedido.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + token
+                            },
+                            body: JSON.stringify({
+                                status: statusInput.value
+                            })
+                        }).then(response => response.json()).then(data => {
+                            if (!data.status) {
+                                console.log(data)
+                                alert('Erro ao atualizar pedido');
+                            } else {
+                                alert('Pedido atualizado com sucesso');
+                                pegarPedidos()
+                            }
+                        }).catch(err => {
+                            console.error(err);
+                        });
+                    }
+                    td8.appendChild(btnAtualizar);
+
+                    tr.appendChild(td1);
+                    tr.appendChild(td2);
+                    tr.appendChild(td3);
+                    tr.appendChild(td4);
+                    tr.appendChild(td5);
+                    tr.appendChild(td6);
+                    tr.appendChild(td7);
+                    tr.appendChild(td8);
+                    tbody.appendChild(tr);
+                }
+            });
+            table.appendChild(tbody);
+            dados.appendChild(table);
+        }
+
+        function pegarProdutos() {
+            fetch('http://localhost:8080/produtos', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+            }).then(response => response.json()).then(data => {
+                produtos = data.products;
+                produtos.forEach(produto => {
+                    const option = document.createElement('option');
+                    option.value = produto.id;
+                    option.text = produto.nome;
+                    cboProductos.appendChild(option);
+
+                });
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+
+</html>

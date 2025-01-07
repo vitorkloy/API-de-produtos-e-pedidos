@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Produtos JSON</title>
+</head>
+
+<body>
+    <input type="file" id="txtArquivo">
+    <button id="btnEnviar">Enviar</button>
+</body>
+
+<script>
+    const arquivo = document.getElementById('txtArquivo');
+    const btnEnviar = document.getElementById('btnEnviar');
+    const token = localStorage.getItem('token');
+
+    btnEnviar.onclick = () => {
+        const dados = new FormData();
+        dados.append('variavelArquivo', txtArquivo.files[0]);
+
+        fetch('http://localhost:8080/produtos/json', {
+            method: 'POST',
+            body: dados,
+            headers: {
+                'Authorization': `Bearer ${token}`
+            },
+        }).then(response => response.json()).then(data => {
+            if (data.status) {
+                alert('Produtos cadastrados com sucesso');
+            } else {
+                alert('Erro ao cadastrar produtos');
+            }
+        }).catch(error => {
+            console.error(error);
+        });
+    }
+</script>
+
+</html>

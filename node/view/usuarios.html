@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários</title>
+</head>
+
+<body>
+    <div>
+        Nome: <input type="text" id="txtNome">
+    </div>
+    <div>
+        Endereco: <input type="text" id="txtEndereco">
+    </div>
+    <div>
+        Telefone: <input type="number" id="txtTelefone">
+    </div>
+    <div>
+        Email: <input type="text" id="txtEmail">
+    </div>
+    <div>
+        Senha: <input type="password" id="txtSenha">
+    </div>
+    <div>
+        Filtro: <input type="text" id="txtFiltro">
+    </div>
+    <div>
+        <button id="btnCadastro">Criar usuário</button>
+    </div>
+
+    <div id="dados"></div>
+
+    <script>
+        var USUARIOS = {};
+        const nome = document.getElementById('txtNome');
+        const endereco = document.getElementById('txtEndereco');
+        const telefone = document.getElementById('txtTelefone');
+        const email = document.getElementById('txtEmail');
+        const senha = document.getElementById('txtSenha');
+        const btnCadastro = document.getElementById('btnCadastro');
+        const filtro = document.getElementById('txtFiltro');
+        const token = localStorage.getItem('token');
+
+        pegarUsuarios();
+
+        txtFiltro.onkeyup = () => {
+            construirTabela(USUARIOS, txtFiltro.value);
+        }
+
+        btnCadastro.onclick = () => {
+            cadastrarUsuario();
+        }
+
+        function construirTabela(data, filtro) {
+            const table = document.createElement('table');
+            table.style.border = '1px solid black';
+            const titulo = document.createElement('tr');
+            const nomeTitulo = document.createElement('th');
+            nomeTitulo.textContent = 'Nome';
+            const enderecoTitulo = document.createElement('th');
+            enderecoTitulo.textContent = 'Endereço';
+            const telefoneTitulo = document.createElement('th');
+            telefoneTitulo.textContent = 'Telefone';
+            const emailTitulo = document.createElement('th');
+            emailTitulo.textContent = 'Email';
+            const senhaTitulo = document.createElement('th');
+            senhaTitulo.textContent = 'Senha';
+            const deletarTitulo = document.createElement('th');
+            deletarTitulo.textContent = 'Deletar';
+            const selecionarTitulo = document.createElement('th');
+            selecionarTitulo.textContent = 'Selecionar';
+            const atualizarTitulo = document.createElement('th');
+            atualizarTitulo.textContent = 'Atualizar';
+
+            titulo.appendChild(nomeTitulo);
+            titulo.appendChild(enderecoTitulo);
+            titulo.appendChild(telefoneTitulo);
+            titulo.appendChild(emailTitulo);
+            titulo.appendChild(senhaTitulo);
+            titulo.appendChild(deletarTitulo);
+            titulo.appendChild(selecionarTitulo);
+            titulo.appendChild(atualizarTitulo);
+            table.appendChild(titulo);
+            data.forEach(usuario => {
+                if (usuario.nome.toLowerCase().includes(filtro.toLowerCase())) {
+                    const row = document.createElement('tr');
+
+                    const nome = document.createElement('td');
+                    const nomeInput = document.createElement('input');
+                    nomeInput.value = usuario.nome;
+                    nomeInput.disabled = true;
+                    nome.appendChild(nomeInput);
+
+                    const endereco = document.createElement('td');
+                    const enderecoInput = document.createElement('input');
+                    enderecoInput.value = usuario.endereco;
+                    enderecoInput.disabled = true;
+                    endereco.appendChild(enderecoInput);
+
+                    const telefone = document.createElement('td');
+                    const telefoneInput = document.createElement('input');
+                    telefoneInput.value = usuario.telefone;
+                    telefoneInput.disabled = true;
+                    telefoneInput.type = 'number';
+                    telefone.appendChild(telefoneInput);
+
+                    const email = document.createElement('td');
+                    const emailInput = document.createElement('input');
+                    emailInput.value = usuario.email;
+                    emailInput.disabled = true;
+                    emailInput.type = 'email';
+                    email.appendChild(emailInput);
+
+                    const senha = document.createElement('td');
+                    const senhaInput = document.createElement('input');
+                    senhaInput.value = "";
+                    senhaInput.disabled = true;
+                    senhaInput.type = 'password';
+                    senha.appendChild(senhaInput);
+
+                    const deletar = document.createElement('td');
+                    const deletarBtn = document.createElement('button');
+                    deletarBtn.textContent = 'Deletar';
+                    deletarBtn.onclick = () => {
+                        deletarUsuario(usuario.id);
+                    }
+                    deletar.appendChild(deletarBtn);
+
+                    const selecionar = document.createElement('td');
+                    const selecionarBtn = document.createElement('button');
+                    selecionarBtn.textContent = 'Selecionar';
+                    selecionarBtn.onclick = () => {
+                        nomeInput.disabled = false;
+                        enderecoInput.disabled = false;
+                        telefoneInput.disabled = false;
+                        emailInput.disabled = false
+                        senhaInput.disabled = false;
+                    }
+                    selecionar.appendChild(selecionarBtn);
+
+                    const atualizar = document.createElement('td');
+                    const atualizarBtn = document.createElement('button');
+                    atualizarBtn.textContent = 'Atualizar';
+                    atualizarBtn.onclick = () => {
+                        atualizarUsuario(usuario.id, nomeInput.value, enderecoInput.value, telefoneInput.value, emailInput.value, senhaInput.value);
+                    }
+                    atualizar.appendChild(atualizarBtn);
+
+                    row.appendChild(nome);
+                    row.appendChild(endereco);
+                    row.appendChild(telefone);
+                    row.appendChild(email);
+                    row.appendChild(senha);
+                    row.appendChild(deletar);
+                    row.appendChild(selecionar);
+                    row.appendChild(atualizar);
+                    table.appendChild(row);
+                }
+            });
+            document.getElementById('dados').innerHTML = '';
+            document.getElementById('dados').appendChild(table);
+        }
+
+        function atualizarUsuario(id, nome, endereco, telefone, email, senha) {
+            fetch(`http://localhost:8080/usuarios/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    nome,
+                    endereco,
+                    telefone,
+                    email,
+                    senha
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.status) {
+                        console.log(data)
+                        alert('Erro ao atualizar usuário');
+                    } else {
+                        alert('Usuário atualizado com sucesso');
+                        pegarUsuarios();
+                    }
+                }).catch(err => {
+                    console.error(err);
+                })
+        }
+
+        function deletarUsuario(id) {
+            fetch(`http://localhost:8080/usuarios/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                }
+            }).then(response => {
+                if (response.status === 204) {
+                    alert('Usuário deletado com sucesso');
+                    pegarUsuarios();
+                } else {
+                    alert('Erro ao deletar usuário pois ele tem pedidos pendentes');
+                }
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+
+        function cadastrarUsuario() {
+            if (!nome.value || !endereco.value || !telefone.value || !email.value || !senha.value) {
+                alert('Preencha todos os campos');
+                return;
+            }
+            fetch('http://localhost:8080/usuarios', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({
+                    nome: nome.value,
+                    endereco: endereco.value,
+                    telefone: telefone.value,
+                    email: email.value,
+                    senha: senha.value
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.status) {
+                        alert('Erro ao cadastrar usuário');
+                    } else {
+                        alert('Usuário cadastrado com sucesso');
+                        nome.value = '';
+                        endereco.value = '';
+                        telefone.value = '';
+                        email.value = '';
+                        senha.value = '';
+                        pegarUsuarios();
+                    }
+                }).catch(err => {
+                    console.error(err);
+                });
+        }
+
+        function pegarUsuarios() {
+            fetch('http://localhost:8080/usuarios', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+            }).then(response => response.json()).then(data => {
+                USUARIOS = data.users;
+                construirTabela(USUARIOS, '')
+            }).catch(err => {
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+
+</html>

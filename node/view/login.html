@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+
+<body>
+    <div>
+        email: <input type="email" name="email" id="txtEmail">
+
+    </div>
+    <div>
+        senha: <input type="password" name="senha" id="txtSenha">
+    </div>
+    <div>
+        <button id="btnLogin">Login</button>
+    </div>
+
+    <div id="resposta"></div>
+
+    <script>
+        const btnLogin = document.getElementById('btnLogin');
+        const txtEmail = document.getElementById('txtEmail');
+        const txtSenha = document.getElementById('txtSenha');
+        const resposta = document.getElementById('resposta');
+
+        btnLogin.onclick = () => {
+            resposta.innerHTML = '';
+
+            try {
+                fetch("http://localhost:8080/logar", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: txtEmail.value,
+                        senha: txtSenha.value
+                    })
+                }).then(res => res.json()).then(data => {
+                    console.log(data)
+                    Login(data);
+                });
+            } catch (error) {
+                console.log(error)
+            }
+        }
+
+        function Login(data) {
+            if (!data.token) {
+                console.log("falha")
+                alert("Falha no login");
+            } else {
+                localStorage.setItem('token', data.token);
+                window.location.href = '/view/painel.html';
+            }
+        }
+    </script>
+</body>
+
+</html>
